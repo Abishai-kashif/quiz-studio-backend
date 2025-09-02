@@ -18,6 +18,16 @@ def web_search(query: str) -> dict[str, any]:
 
     Returns:
         dict: A dictionary containing search results.
+
+    Error & Fallback Behavior:
+    - If the provided URL cannot be accessed (e.g., private, expired, or 
+        personal content like chat links), return a clear error message 
+        indicating that the source is not accessible.
+    - If the query returns no results, return a message stating 
+        "No results found for the given query."
+    - Always provide explicit feedback rather than silent failure, 
+        so the user knows whether the issue is with the link, permissions, 
+        or the query itself.
     """
     print(f"Web searching for: {query}")
     try:

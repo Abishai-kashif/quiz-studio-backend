@@ -2,7 +2,7 @@ import json
 from models import Body
 from agents import Runner, set_tracing_disabled, enable_verbose_stdout_logging
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from openai.types.responses import ResponseTextDeltaEvent
 from helper import Helper
@@ -17,7 +17,8 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
+    expose_headers=["X-Response-Mode"]
 )
 
 @app.get("/")
@@ -28,24 +29,6 @@ async def root():
 async def main(body: Body):
     print("\n\nbody >>>>>>>>>>>>>>>>>>> \n", body)
     source = body.source
-    # source = body.get("source", "")
-    # file = body.get("file", None)
-
-    # content: ContentType = source
-
-    # if (file and source):
-    #     return {"error": "Please provide either a source or a file, but not both."}
-
-    # if not content:
-    #     content = file
-
-    # if not content:
-    #     return {"error": "No source provided."}
-    
-    # return { 
-    #     "status": "success",
-    #     "message": "Quiz generated successfully."
-    #  }
 
     is_url = Helper.is_url(text=source) 
     is_valid_source = False
@@ -58,6 +41,15 @@ async def main(body: Body):
         result = await Runner.run(starting_agent=content_generator_agent, input=source)
         source = result.final_output
 
+        result = await Runner.run(starting_agent=source_validator_agent, input=source)
+        is_valid_source = result.final_output.is_valid
+
+    if (not is_valid_source):
+        return JSONResponse(
+            content={"status": "error", "message": source },
+            headers={"X-Response-Mode": "error"}
+        )
+        
     result = Runner.run_streamed(starting_agent=quiz_generator_agent, input=source)
     
 
@@ -84,5 +76,5 @@ async def main(body: Body):
             
     return StreamingResponse(
         event_generator(), media_type="application/json",
-        headers={"Cache-Control": "no-cache"}
+        headers={"Cache-Control": "no-cache",  "X-Response-Mode": "stream"}
     )
