@@ -1,5 +1,5 @@
 from agents.extensions.handoff_filters import remove_all_tools
-from agents import Agent, ModelSettings, Runner, handoff
+from agents import Agent, ModelSettings, handoff
 from models import QuizList, SourceValidatorOutput
 from gemini_model import model
 from tools import web_search
@@ -8,9 +8,7 @@ from instructions import (
                             content_generator_instructions, 
                             quiz_generator_instructions, 
                             markdown_generator_instructions,
-                            tutor_agent_instructions,
-                            bio_agent_instructions,
-                            math_agent_instructions
+                            tutor_agent_instructions
                         )
 
 base_agent = Agent(
@@ -61,25 +59,6 @@ tutor_agent = base_agent.clone(
         """
     )]
 )
-
-math_agent = base_agent.clone(
-    name="math_agent",
-    instructions=math_agent_instructions,
-    handoffs=[handoff(agent=tutor_agent, input_filter=remove_all_tools), handoff(agent=quiz_generator_agent, input_filter=remove_all_tools)],
-    model_settings=ModelSettings(temperature=0.3),
-)
-
-bio_agent = base_agent.clone(
-    name="bio_agent",
-    instructions=bio_agent_instructions,
-    model_settings=ModelSettings(temperature=0.8),
-    tools=[web_search],  # allows fetching extra info if needed
-    handoffs=[
-        handoff(agent=quiz_generator_agent, input_filter=remove_all_tools),
-        handoff(agent=tutor_agent, input_filter=remove_all_tools)  # fallback for tutoring/feedback
-    ]
-)
-
 
 
 # if __name__ == "__main__":
