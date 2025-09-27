@@ -1,10 +1,10 @@
 def prune_serpapi_response(raw: dict) -> dict:
     """
     Given a full SerpAPI JSON response, returns a pared-down dict containing:
-      - query
-      - optional spelling suggestion
-      - organic results (position, title, link, snippet, highlighted terms)
-      - inline images (source URL and title)
+    - query
+    - optional spelling suggestion
+    - organic results (position, title, link, snippet, highlighted terms)
+    - inline images (source URL and title)
     """
     pruned = {}
 

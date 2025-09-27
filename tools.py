@@ -1,6 +1,6 @@
-from prune_serpapi_response import prune_serpapi_response
 from agents import function_tool
 from dotenv import load_dotenv
+from prune_serpapi_reponse import prune_serpapi_response
 import requests
 import os
 
@@ -38,7 +38,6 @@ def web_search(query: str) -> dict[str, any]:
         url = f'https://serpapi.com/search?q={query}&api_key={serp_api_key}'
         response = requests.get(url)
         data = response.json()
-        print(data)
         return prune_serpapi_response(data)
     except requests.exceptions.RequestException as e:
         print(f"Web search failed: {e}")
@@ -46,19 +45,3 @@ def web_search(query: str) -> dict[str, any]:
     except Exception as e:
         print(f"An error occurred during web search: {e}")
         return {"error": "An error occurred during web search."}
-    
-
-
-if __name__ == "__main__":
-    class Singleton:
-        _instance = None
-
-        def __new__(cls, *args, **kwargs):
-            print('>>>> ')
-            if not cls._instance:   # if no instance exists, create one
-                cls._instance = super().__new__(cls)
-            return cls._instance
-
-    a = Singleton()
-    b = Singleton()
-    print(a is b)  # True -> same instance
