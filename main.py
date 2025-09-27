@@ -12,7 +12,9 @@ from models import (SessionOut, SessionSummary, UserCreate, UserOut, Token, Toke
                    QuizAttempt, QuizAttemptAnswer, QuizHistoryResponse, UserQuizStats,
                    UserSession, SessionHistoryResponse, SessionStatsResponse,
                    OpenAISessionData, OpenAISessionMessage, ChatHistoryEntry, 
-                   RecentSessionsResponse, SessionCreateRequest, SessionUpdateRequest)
+                   RecentSessionsResponse, SessionCreateRequest, SessionUpdateRequest,
+                   CreateQuiz
+                   )
 from openai_sessions_service import openai_sessions_service
 from pymongo_get_database import get_database
 from pymongo.errors import DuplicateKeyError
@@ -26,6 +28,8 @@ from utils import Utils
 import json
 import os
 from agents import AgentOutputSchema
+from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
 
 load_dotenv(override=True)
 
@@ -33,12 +37,14 @@ db = get_database()
 if db is not None:
     users_collection = db["users"]
     sessions_collection = db["sessions"]
-    quizzes_collection = db["quizzes"]
     quiz_sessions_collection = db["quiz_sessions"]
     student_responses_collection = db["student_responses"]
     student_progress_collection = db["student_progress"]
     quiz_attempts_collection = db["quiz_attempts"]
     user_sessions_collection = db["user_sessions"]
+
+    quizzes_collection = db["quizzes"]
+
     print("📊 Database collections initialized successfully!")
 else:
     print("⚠️  Running without database - some features may be limited")
@@ -399,6 +405,22 @@ async def chat(
             event_generator(), media_type="application/json",
             headers={"Cache-Control": "no-cache",  "X-Response-Mode": "stream"}
         )
+
+
+@app.get("/quizzes")
+async def get_quizzes():
+    try:
+        quizzes = list(quizzes_collection.find())
+        
+        # convert ObjectId to string
+        for quiz in quizzes:
+            quiz["_id"] = str(quiz["_id"])
+
+        return JSONResponse(content=jsonable_encoder(quizzes))
+    
+    except Exception as e:
+        print("Error: ", e)
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/quizzes")
 async def main(
@@ -1523,6 +1545,29 @@ async def get_user_session_stats(request: Request):
         print(f"❌ Error retrieving session stats: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve session stats: {str(e)}")
 
+
+
+@app.post("/quizzes/create")
+async def create_quiz(quizData: CreateQuiz):
+    try:
+        print('\n\n[CREATING DOC]: ', quizData, '\n\n')
+        questions = [q.model_dump() for q in quizData.questions];
+        print(f'\n\n >>> {questions} <<<\n\n')
+
+        result = quizzes_collection.insert_one({
+            "questions": questions,
+            "title": quizData.title,
+            "userId": quizData.userId,
+            "estimatedTime": quizData.estimatedTime
+        })
+
+
+        print(f"\n\n[RESULT]: {result} \n\n")
+
+        return JSONResponse(content={ 'status': 'done' })
+    except Exception as e:
+        print('An Error occurred while saving the quiz: ', e)
+    
 
 if __name__ == "__main__":
     import uvicorn

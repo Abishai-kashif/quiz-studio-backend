@@ -23,11 +23,12 @@ class QuizQuestion(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-class QuizList(RootModel):
-    root: conlist(QuizQuestion, min_length=2, max_length=2)
+class QuizList(BaseModel):
+    title: str
+    questions: conlist(QuizQuestion, min_length=5, max_length=5)
 
-    def __iter__(self):
-        return iter(self.root)
+    # def __iter__(self):
+    #     return iter(self.root)
     
 class UserCreate(BaseModel):
     email: EmailStr
@@ -323,6 +324,23 @@ class SessionUpdateRequest(BaseModel):
     """Request model for updating OpenAI Sessions"""
     message: OpenAISessionMessage
     context: Optional[Dict[str, Any]] = None
+
+
+
+# export interface QuizQuestion {
+#   question: string
+#   options: [string, string, string, string] // Exactly 4 options
+#   answer: string
+# }
+
+# export type QuizMessageResponse = QuizQuestion[]; 
+
+class CreateQuiz(BaseModel):
+    title: str
+    userId: str
+    estimatedTime: int
+    questions: List[QuizQuestion]
+
 
 def main():
     ob = QuizList.model_validate(
