@@ -1,6 +1,7 @@
 from pydantic import BaseModel, conlist, ConfigDict, RootModel, EmailStr, Field
 from fastapi import UploadFile
 from typing import Optional, Literal, List, Union
+from datetime import datetime
 
 class User(BaseModel):
     email: str
@@ -41,6 +42,75 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# Enhanced Assessment Agent Models
+class AssessmentQuizQuestion(BaseModel):
+    id: str
+    question: str
+    options: List[str] = Field(..., min_items=4, max_items=4)
+    correct_answer: str
+    difficulty_level: int = Field(..., ge=1, le=5)
+    curriculum_topic: str
+    language: str = "en"
+    question_type: Literal["mcq", "fill_blank", "true_false"] = "mcq"
+    hints: Optional[List[str]] = []
+    explanation: Optional[str] = None
+
+class StudentResponse(BaseModel):
+    question_id: str
+    student_id: str
+    student_answer: str
+    time_taken: int  # in seconds
+    hints_used: int = 0
+    confidence_level: Optional[int] = Field(None, ge=1, le=5)
+    is_correct: bool
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+class QuizSession(BaseModel):
+    id: str
+    student_id: str
+    quiz_id: str
+    questions: List[AssessmentQuizQuestion]
+    responses: List[StudentResponse] = []
+    start_time: datetime = Field(default_factory=datetime.now)
+    end_time: Optional[datetime] = None
+    status: Literal["in_progress", "completed", "abandoned"] = "in_progress"
+    score: Optional[float] = None
+
+class StudentProgress(BaseModel):
+    student_id: str
+    curriculum_topic: str
+    mastery_level: float = Field(..., ge=0.0, le=1.0)
+    total_questions_attempted: int = 0
+    correct_answers: int = 0
+    average_time_per_question: float = 0.0
+    misconceptions: List[str] = []
+    last_updated: datetime = Field(default_factory=datetime.now)
+
+class MisconductionAnalysis(BaseModel):
+    question_id: str
+    student_id: str
+    misconception_type: str
+    description: str
+    suggested_remediation: str
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+
+class QuizGenerationRequest(BaseModel):
+    curriculum_topic: str
+    difficulty_level: int = Field(..., ge=1, le=5)
+    num_questions: int = Field(..., ge=1, le=20)
+    language: str = "en"
+    question_types: List[Literal["mcq", "fill_blank", "true_false"]] = ["mcq"]
+    student_id: Optional[str] = None
+
+class QuizAnalytics(BaseModel):
+    quiz_id: str
+    total_attempts: int
+    average_score: float
+    completion_rate: float
+    average_time: float
+    difficulty_distribution: dict
+    common_misconceptions: List[str]
 
 
 

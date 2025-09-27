@@ -1,6 +1,6 @@
 from agents.extensions.handoff_filters import remove_all_tools
 from agents import Agent, ModelSettings, Runner, handoff
-from models import QuizList, SourceValidatorOutput
+from models import QuizList, SourceValidatorOutput, AssessmentQuizQuestion, StudentProgress, MisconductionAnalysis
 from gemini_model import model
 from tools import web_search
 from instructions import (
@@ -8,7 +8,8 @@ from instructions import (
                             content_generator_instructions, 
                             quiz_generator_instructions, 
                             markdown_generator_instructions,
-                            tutor_agent_instructions
+                            tutor_agent_instructions,
+                            assessment_agent_instructions
                         )
 
 base_agent = Agent(
@@ -58,6 +59,21 @@ tutor_agent = base_agent.clone(
                 - Output: clear, concise teachable content (summary, explanation, example, or practice question).
         """
     )]
+)
+
+# Enhanced Assessment Agent
+assessment_agent = base_agent.clone(
+    name="assessment_agent",
+    instructions=assessment_agent_instructions,
+    model_settings=ModelSettings(temperature=0.3),
+    handoff_description="""
+        Send queries to me for:
+        - Generating adaptive quizzes based on curriculum standards
+        - Analyzing student responses and detecting misconceptions
+        - Tracking student progress and mastery levels
+        - Creating personalized learning recommendations
+    """,
+    tools=[web_search]
 )
 
 
