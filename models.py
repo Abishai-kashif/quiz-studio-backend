@@ -1,6 +1,6 @@
 from pydantic import BaseModel, conlist, ConfigDict, RootModel, EmailStr, Field
 from fastapi import UploadFile
-from typing import Optional, Literal, List, Union
+from typing import Optional, Literal, List, Union, Dict, Any
 from datetime import datetime
 
 class User(BaseModel):
@@ -42,6 +42,20 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+class SessionInfo(BaseModel):
+    user: UserOut
+    expires_at: datetime
+    is_valid: bool
 
 # Enhanced Assessment Agent Models
 class AssessmentQuizQuestion(BaseModel):
@@ -112,6 +126,79 @@ class QuizAnalytics(BaseModel):
     difficulty_distribution: dict
     common_misconceptions: List[str]
 
+# Enhanced Quiz Session History Models
+class QuizAttemptAnswer(BaseModel):
+    question_index: int
+    question: str
+    selected_answer: str
+    correct_answer: str
+    is_correct: bool
+    time_taken: Optional[float] = None  # in seconds
+
+class QuizAttempt(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    quiz_id: str
+    quiz_title: str
+    answers: List[QuizAttemptAnswer]
+    score: int
+    total_questions: int
+    percentage: float
+    time_taken: Optional[float] = None  # total time in seconds
+    started_at: datetime = Field(default_factory=datetime.now)
+    completed_at: Optional[datetime] = None
+    status: Literal["in_progress", "completed", "abandoned"] = "in_progress"
+
+class QuizHistoryResponse(BaseModel):
+    attempts: List[QuizAttempt]
+    total_attempts: int
+    average_score: float
+    best_score: float
+    total_time_spent: float  # in minutes
+
+class UserQuizStats(BaseModel):
+    user_id: str
+    total_quizzes_taken: int
+    total_questions_answered: int
+    correct_answers: int
+    accuracy_rate: float
+    average_score: float
+    total_time_spent: float  # in minutes
+    favorite_topics: List[str]
+    recent_activity: List[QuizAttempt]
+
+# User Session History Models
+class UserSession(BaseModel):
+    id: Optional[str] = None
+    user_id: str
+    session_token: str
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    login_timestamp: datetime = Field(default_factory=datetime.now)
+    logout_timestamp: Optional[datetime] = None
+    last_activity: datetime = Field(default_factory=datetime.now)
+    duration_minutes: Optional[float] = None
+    is_active: bool = True
+    device_type: Optional[str] = None  # mobile, desktop, tablet
+    browser: Optional[str] = None
+    location: Optional[str] = None  # city, country if available
+
+class SessionHistoryResponse(BaseModel):
+    sessions: List[UserSession]
+    total_sessions: int
+    current_page: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+
+class SessionStatsResponse(BaseModel):
+    total_sessions: int
+    total_time_spent: float  # in minutes
+    average_session_duration: float  # in minutes
+    most_active_device: Optional[str] = None
+    most_active_browser: Optional[str] = None
+    recent_locations: List[str] = []
+
 
 
 class User(BaseModel):
@@ -157,6 +244,85 @@ class SessionSummary(BaseModel):
     user_id: str
     title: Optional[str] = None
     created_at: Optional[str] = None
+
+def main():
+    ob = QuizList.model_validate(
+        [
+            {
+                "question": "What is the capital of France?",   
+                "options": ["Paris", "London", "Paris", "London"],
+                "answer": "Paris"
+            },
+            {
+                "question": "What is the capital of France?",   
+                "options": ["Paris", "London", "Paris", "London"],
+                "answer": "Paris"
+            },
+            {
+                "question": "What is the capital of France?",   
+                "options": ["Paris", "London", "Paris", "London"],
+                "answer": "Paris"
+            },
+            {
+                "question": "What is the capital of France?",   
+                "options": ["Paris", "London", "Paris", "London"],
+                "answer": "Paris"
+            },
+            {
+                "question": "What is the capital of France?",   
+                "options": ["Paris", "London", "Paris", "London"],
+                "answer": "Paris"
+            }
+        ]
+    )
+    print(ob)
+
+# OpenAI Agents SDK Session Integration Models
+class OpenAISessionMessage(BaseModel):
+    """Message model for OpenAI Sessions integration"""
+    role: Literal["user", "assistant", "system"]
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    metadata: Optional[Dict[str, Any]] = None
+
+class OpenAISessionData(BaseModel):
+    """Enhanced session data model for OpenAI Sessions"""
+    session_id: str
+    user_id: str
+    messages: List[OpenAISessionMessage] = []
+    context: Optional[Dict[str, Any]] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    is_active: bool = True
+    session_type: Literal["chat", "quiz", "assessment"] = "chat"
+    metadata: Optional[Dict[str, Any]] = None
+
+class ChatHistoryEntry(BaseModel):
+    """Chat history entry for Recent Sessions display"""
+    session_id: str
+    title: str
+    last_message: str
+    timestamp: datetime
+    message_count: int
+    session_type: Literal["chat", "quiz", "assessment"] = "chat"
+    preview: Optional[str] = None
+
+class RecentSessionsResponse(BaseModel):
+    """Response model for Recent Sessions"""
+    sessions: List[ChatHistoryEntry]
+    total_count: int
+    has_more: bool
+
+class SessionCreateRequest(BaseModel):
+    """Request model for creating new OpenAI Sessions"""
+    initial_message: Optional[str] = None
+    session_type: Literal["chat", "quiz", "assessment"] = "chat"
+    context: Optional[Dict[str, Any]] = None
+
+class SessionUpdateRequest(BaseModel):
+    """Request model for updating OpenAI Sessions"""
+    message: OpenAISessionMessage
+    context: Optional[Dict[str, Any]] = None
 
 def main():
     ob = QuizList.model_validate(
