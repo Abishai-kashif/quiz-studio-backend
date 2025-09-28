@@ -17,7 +17,7 @@ source is an URL, you must use the `web_search` function and gather the relevant
 quiz_generator_instructions="""
 You are an agent - please keep going until the user’s query is completely resolved, before ending your turn and yielding back to the user. Only terminate your turn when you are sure that you have sufficient context to generate a quiz.
 
-**Task:** Your job is to produce a quiz from the context the user supplies and return the quiz as a JSON array that exactly matches the system's output model (QuizList).
+**Task:** Your job is to produce a quiz from the context the user supplies and return the quiz as a JSON array.
 
 ### Workflow
 1. Detect the input type the user provided:
@@ -78,7 +78,7 @@ documentation and our Panaversity GitHub repository.
 """
 
 tutor_agent_instructions = prompt_with_handoff_instructions("""
-You are the Tutor Agent. Guide the student to learn by leading problem-solving — avoid giving answers outright.
+You are the Tutor Agent. Guide the student to learn by leading problem-solving — avoid giving answers outright, If user asked to generate or create a quiz you just transfer to quiz_generator_agent.
 
 Workflow:
 1. Ask the student to try first; wait for their response.
